@@ -21,10 +21,9 @@ export class CartManager {
         }
     }
 
-    async getCartById(idCart){
+    async getCartById(cartId){
         try {
-            const read = await this.getCarts();
-            const cart = read.find((c) => c.id === idCart);
+            const cart = await cartsModel.find({_id:cartId})
             if(cart){
                 console.log(cart)
                 return cart;
@@ -36,6 +35,18 @@ export class CartManager {
             return error
         }
     }
+
+    async addProdToCart(cartId, prodId){
+    try {
+        const cart = await cartsModel.findById(cartId)
+        cart.products.push(prodId)
+        cart.save()
+        return cart
+    } catch (error) {
+        console.log(error)
+    }
+}
+
 
     // async addProductToCartById(idCart,idProduct,quantity){
     //     const read = await this.getCarts();

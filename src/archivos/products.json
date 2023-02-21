@@ -37,9 +37,9 @@
     "title": "iphone 13",
     "description": "iphone 13 pink",
     "code": "1111111111",
-    "price": "346346",
-    "stock": "6346",
-    "category": "634346",
+    "price": 900,
+    "stock": 25,
+    "category": "phone",
     "thumbnail": "../../img/iphone-13-pink-select-2021.png",
     "status": true
   }

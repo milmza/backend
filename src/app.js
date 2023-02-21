@@ -1,6 +1,6 @@
 import express from 'express'
 import productsRouter from '../routes/products.router.js'
-import cartRouter from '../routes/cart.router.js'
+import cartsRouter from '../routes/carts.router.js'
 import viewsRouter from '../routes/views.router.js'
 import chatRouter from '../routes/chat.router.js'
 import { __dirname } from '../utils.js'
@@ -22,7 +22,7 @@ app.set('views', __dirname + '/views')
 // ROUTES
 app.use('/', viewsRouter)
 app.use('/api/products', productsRouter)
-app.use('/api/cart', cartRouter)
+app.use('/api/carts', cartsRouter)
 app.use('/chat', chatRouter)
 
 
