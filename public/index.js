@@ -68,3 +68,4 @@ socketClient.on('chat', mensajes=>{
 
     chatParrafo.innerHTML = htmlRender
 })
+

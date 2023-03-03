@@ -29,57 +29,53 @@ cartRouter.get('/:cartId', async(req,res) => {
 
 cartRouter.post('/', async(req, res) => {
     const products = await req.body;
-    const newCart = await cartManager.addCart(products);
+    const quantity = await req.body
+    const newCart = await cartManager.addCart(products, quantity);
     if(!newCart){
         res.json({message:"error"});
     }else{
         res.json({message:"Carrito creado con éxito",newCart});
     }
-    
 })
 
-cartRouter.post('/addProd', async(req, res)=>{
-    const {cartId, prodId, quantity} = req.body
-    const cart = await cartManager.addProdToCart(cartId, prodId, quantity)
-    res.json({message: 'product added successfully', cart})
-})
 
 //put
 
 cartRouter.put('/:cartId', async(req, res)=>{
     const {cartId} = req.params
-    const {products} = req.body
-    const cart = await cartManager.getCartById(cartId)
+    const products = await req.body
     const cartMod = await cartManager.addProdToCart(cartId, products)
-    res.json({message: 'product added successfully', oldCart: cart, newCart: cartMod})
+    res.json({message: 'product added successfully', newCart: cartMod})
 })
+
+cartRouter.put('/:cartId/products/:prodId', async(req, res)=>{
+    const {cartId} = req.params
+    const {prodId} = req.params
+    const quantity = await req.body
+    const quantityMod = await cartsModel.findOneAndReplace(prodId, quantity, {new: true})
+    res.json({message: "product's quantity modified successfully", quantityMod})
+})
+
 
 //delete
 
-cartRouter.delete('/:cartId/products/:prodId', async(req, res)=>{
+cartRouter.delete('/:cartId/product/:prodId',async(req,res) => {
     const {cartId, prodId} = req.params
-    const cart = await cartManager.getCartById(cartId)
-    const prodDelete = await cartsModel.findByIdAndDelete(prodId)
-    if(!prodDelete){
-        res.json({message: 'prod not found'})
-    }else{
-        res.json({message: 'product deleted successfully', cart: cart})
-    }
-})
+    const cart = await cartManager.delProdFromCart(cartId, prodId)
+    // cart.products = await cartsModel.findByIdAndDelete(prodId)
+    // await cart.save()
+    res.json({message:"product deleted successfully",cart});
+});
+
 
 cartRouter.delete('/:cartId', async(req, res)=>{
 const {cartId} = req.params
-const cartDelete = await cartsModel.findByIdAndDelete(cartId)
-res.json({message: 'cart deleted successfully', cartDeleted: cartDelete})
+const cartEmpty = await cartManager.emptyCart(cartId)
+// const {prodId} = req.body
+// const cartDelete = await cartsModel.findByIdAndDelete(prodId)
+res.json({message: 'cart emptied successfully', cartEmpty: cartEmpty})
 })
 
-// cartRouter.post('/:idCart/product/:idProduct',async(req,res) => {
-//     const idCart = req.params.idCart;
-//     const idProduct = req.params.idProduct;
-//     const quantity = req.body.quantity;
-//     const newProduct = await cartManager.addProductToCartById(idCart,idProduct,quantity);
-//     res.json({message:"producto agregado con éxito",newProduct});
-// });
 
 
 export default cartRouter
