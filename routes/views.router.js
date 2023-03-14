@@ -5,7 +5,7 @@ import {CartManager} from '../src/dao/mongoManager/cartManager.js'
 import socketServer from "../src/app.js";
 import {productsModel} from '../src/dao/models/products.model.js';
 import { cartsModel } from '../src/dao/models/carts.model.js';
-import {auth, isLogged, isAdmin, isUser} from '../middlewares/auth.middleware.js'
+import {auth, isLogged, isAdmin} from '../middlewares/auth.middleware.js'
 
 const viewsRouter = Router()
 // const productManager = new ProductManager('./archivos/products.json') 

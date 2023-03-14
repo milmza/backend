@@ -12,6 +12,7 @@ import './dbConfig.js'
 import { messagesModel } from "./dao/models/messages.model.js";
 import cookieParser from 'cookie-parser'
 import session from 'express-session'
+import passport from 'passport'
 
 const app = express()
 
@@ -43,6 +44,12 @@ app.use(session({
   secret: 'secretKey',
   cookie: {maxAge: 60000}
 }))
+
+//trabajar con passport
+  //inicializar
+  app.use(passport.initialize())
+  //passport va a guardar la info de session
+  app.use(passport.session())
 
 // ROUTES
 app.use('/', viewsRouter)

@@ -1,68 +1,33 @@
 import { Router } from "express";
-import { usersModel } from '../src/dao/models/users.model.js'
+import passport from "passport";
+import '../passport/passportStrategies.js'
 
 const usersRouter = Router()
 
-// const users = []
+//passport
 
-//File
-// usersRouter.post('/signup', (req, res)=>{
-//     const userExist = users.some((u)=>(u.email === req.body.email))
-//     if(userExist){
-//         res.redirect('/errorSignup')
-//     }else{
-//         users.push(req.body)
-//         res.redirect('/login')
-//     }
-// })
+usersRouter.post('/signup', passport.authenticate('signup',{
+    failureRedirect: '/errorSignup',
+    successRedirect: '/login',
+    passReqToCallback: true,
+    })
+)
 
-// usersRouter.post('/login', (req, res)=>{
-//     const {email, password} = req.body
-//     const user = users.find((u)=>(u.email === email))
-//     if(user && user.password === password){
-//         for (const key in req.body) {
-//             console.log(req.session[key])
-//             req.session[key] = req.body[key]
-//             // req.body[key] = req.session[key]
-//         }
-//         res.redirect('/profile')
-//     }else{
-//         res.redirect('/errorLogin')
-//     }
-// })
-
-// usersRouter.get('/users/logout', (req, res)=>{
-//     req.session.destroy((error)=>{
-//         if (error){
-//             console.log(error)
-//         }else{
-//             res.redirect('/login')
-//         }
-//     })
-// })
-
-//mongo
-
-usersRouter.post('/signup', async(req, res)=>{
-    const {email, password} = req.body
-    const userExist = await usersModel.find({email, password})
-    if(userExist.length!==0){
-        res.redirect('/errorSignup')
-    }else{
-        await usersModel.create(req.body)
-        res.redirect('/login')
-    }
-})
-
-usersRouter.post('/login', async(req, res)=>{
-    const {email, password} = req.body
-    const user = await usersModel.find({email, password})
-    if(user.length!==0){
+usersRouter.post('/login', passport.authenticate('login',{
+    failureRedirect: '/errorLogin',
+    passReqToCallback: true,
+    })
+    ,(req, res)=>{
+        // console.log('user:', req)
+        req.session.email = req.user.email
+        req.session.first_name = req.user.first_name
+        req.session.last_name = req.user.last_name
+        req.session.age = req.user.age
         for (const key in req.body) {
             req.session[key] = req.body[key]
         }
         req.session.logged = true
-        if(email === 'adminCoder@coder.com' && password === 'adminCod3r123'){
+        if(req.session.email === 'adminCoder@coder.com' && req.session.password === 'adminCod3r123'){
             req.session.admin = true
             req.session.user = false
             req.session.role = 'Admin'
@@ -71,19 +36,50 @@ usersRouter.post('/login', async(req, res)=>{
             req.session.user = true
             req.session.role = 'User'
         }
-        if (req.session.email === user[0].email) {
-            req.session.first_name = user[0].first_name;
-            req.session.last_name = user[0].last_name;
-        }
         if (req.session.admin === true) {
             res.redirect('/admin');
         } else {
             res.redirect('/products')
         }
-    }else{
-        res.redirect('/errorLogin')
     }
-})
+)
+
+
+// login con github
+
+usersRouter.get(
+    '/loginGithub',
+    passport.authenticate('githubLogin', { scope: ['user:email'] })
+  );
+
+usersRouter.get(
+    '/github',
+    passport.authenticate('githubLogin', { failureRedirect: '/errorLogin' }),
+    async (req, res) => {
+        req.session.email = req.user.email;
+        req.session.first_name = req.user.first_name;
+        req.session.last_name = req.user.last_name;
+        req.session.age = req.user.age;
+        req.session.logged = true
+        if(req.session.email === 'adminCoder@coder.com' && req.session.password === 'adminCod3r123'){
+        req.session.admin = true
+        req.session.user = false
+        req.session.role = 'Admin'
+    }else{
+        req.session.admin = false
+        req.session.user = true
+        req.session.role = 'User'
+    }
+    if (req.session.admin === true) {
+        res.redirect('/admin');
+    } else {
+        res.redirect('/products')
+    }
+    }
+);
+
+
+
 
 usersRouter.get('/logout', (req, res)=>{
     req.session.destroy((error)=>{
