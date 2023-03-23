@@ -55,7 +55,7 @@ app.use(session({
 app.use('/', viewsRouter)
 app.use('/api/products', productsRouter)
 app.use('/api/carts', cartsRouter)
-app.use('/session', sessionsRouter)
+app.use('/api/sessions', sessionsRouter)
 app.use('/users', usersRouter)
 app.use('/chat', chatRouter)
 
