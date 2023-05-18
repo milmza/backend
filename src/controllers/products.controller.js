@@ -1,7 +1,12 @@
 import { ProductServices} from "../services/product.services.js";
 import {productsModel} from '../dao/models/products.model.js';
-import CustomError from './utils/errors/CustomError.js'
-import { ErrorsCause, ErrorsMessage, ErrorsName } from './utils/errors/errors.enum.js'
+import CustomError from '../utils/errors/CustomError.js'
+import { ErrorsCause, ErrorsMessage, ErrorsName } from '../utils/errors/errors.enum.js'
+import logger from "../utils/winston.js";
+import { generateCode} from "../utils/utils.js";
+import jwt from 'jsonwebtoken'
+import config from "../config.js";
+import { cookies } from "./users.controller.js";
 
 const productServices = new ProductServices()
 
@@ -68,6 +73,7 @@ export async function getAllProducts(req,res){
         }
         }
     } catch (error) {
+        logger.fatal('Error in getAllProducts')
         CustomError.createCustomError({
             name: ErrorsName.GET_PRODUCTS_ERROR, 
             message: ErrorsMessage.GET_PRODUCTS_ERROR, 
@@ -80,11 +86,15 @@ export async function getProductById(req, res) {
     try {
         const product = await productServices.getProdById(req.params.idProduct);
     if(product){
+        logger.info('Product found')
         res.json({ product });
     }else{
-        res.send('Producto no encontrado')
+        logger.error('Product not found')
+        logger.warning('Check the variables')
+        res.send('Product not found')
     }
     } catch (error) {
+        logger.fatal('Error in getProductById')
         CustomError.createCustomError({
             name: ErrorsName.GET_PRODUCT_ID_ERROR, 
             message: ErrorsMessage.GET_PRODUCT_ID_ERROR, 
@@ -95,12 +105,38 @@ export async function getProductById(req, res) {
 
 export async function AddOneProduct(req,res){
     try {
-        const product = req.body
-        // console.log(product)
-        const addNewProduct = await productServices.addOne(product)
-        console.log(addNewProduct)
-        res.json({ message: 'Producto agregado con exito', addNewProduct })
+        const {title, description, price, stock, category, owner} = req.body
+        if(!title || !description || !price || !stock || !category){
+            logger.error('Product incomplete')
+            logger.warning('Some values of the product are missing, please check.')
+            res.send('Product incomplete')
+        }
+        if(owner === ""){
+            const owner = 'adminCoder@coder.com'
+            const product = {...req.body, owner: owner, code: generateCode()}
+            const addNewProduct = await productServices.addOne(product)
+            if(addNewProduct){
+                logger.info('Product added successfully')
+                res.json({ message: 'Product added successfully', addNewProduct })
+            }else{
+                logger.error('Product not added')
+                logger.warning("Check the product's     requirements")
+                res.json({ message: 'Product not added'})
+            }
+        }else{
+            const product = {...req.body, code: generateCode()}
+            const addNewProduct = await productServices.addOne(product)
+            if(addNewProduct){
+                logger.info('Product added successfully')
+                res.json({ message: 'Product added successfully', addNewProduct })
+            }else{
+                logger.error('Product not added')
+                logger.warning("Check the product's     requirements")
+                res.json({ message: 'Product not added'})
+            }
+        }
     } catch (error) {
+        logger.fatal('Error in AddOneProduct')
         CustomError.createCustomError({
             name: ErrorsName.ADD_PRODUCT_ERROR, 
             message: ErrorsMessage.ADD_PRODUCT_ERROR, 
@@ -116,11 +152,15 @@ export async function updateProdById(req, res) {
         const updateProd = await productServices.getProdByIdAndUpdate(id, obj)
         const updatedProd = await productServices.getProdById(id)
         if(updateProd){
-            res.json({ message: 'Producto actualizado con exito', updatedProd })
+            logger.info('Product updated successfully')
+            res.json({ message: 'Product updated successfully', updatedProd })
         }else{
-            res.json({message:"producto no encontrado"})
+            logger.error('Product not found')
+            logger.warning('Check the variables')
+            res.json({message:"product not found"})
         }
     } catch (error) {
+        logger.fatal('Error in updateProdById')
         CustomError.createCustomError({
             name: ErrorsName.UPDATE_PRODUCT_ERROR, 
             message: ErrorsMessage.UPDATE_PRODUCT_ERROR, 
@@ -132,13 +172,39 @@ export async function updateProdById(req, res) {
 export async function deleteProdById(req, res) {
     const id = req.params.idProduct
     try {
-        const deleteProd = await productServices.getProdByIdAndDelete(id)
-        if(deleteProd){
-            res.json({ message: 'Producto borrado con exito', deleteProd })
+        const get = await productServices.getProdById({_id : id})
+        console.log(get)
+        const token = cookies[cookies.length - 1]
+        const verify = jwt.verify(token, config.jwt_key)
+        if(verify.user[0].role === 'Premium'){
+            if(verify.user[0].email === get.owner){
+                const deleteProd = await productServices.getProdByIdAndDelete(id)
+                if(deleteProd){
+                    logger.info('Product deleted successfully')
+                    res.json({ message: 'Product deleted successfully', deleteProd })
+                }else{
+                    logger.error('product not found')
+                    logger.warning('Check the variables')
+                    res.json({message:"product not found"})
+                }
+            }else{
+                logger.error('Not authorized')
+                logger.warning('You are not authorized to delete this product')
+                res.json({message:"Not authorized"})
+            }
         }else{
-            res.json({message:"producto no encontrado"})
+            const deleteProd = await productServices.getProdByIdAndDelete(id)
+            if(deleteProd){
+                logger.info('Product deleted successfully')
+                res.json({ message: 'Product deleted successfully', deleteProd })
+            }else{
+                logger.error('product not found')
+                logger.warning('Check the variables')
+                res.json({message:"product not found"})
+            }
         }
     } catch (error) {
+        logger.fatal('Error in deleteProdById')
         CustomError.createCustomError({
             name: ErrorsName.DELETE_PRODUCT_ERROR, 
             message: ErrorsMessage.DELETE_PRODUCT_ERROR, 
